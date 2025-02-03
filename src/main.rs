@@ -14,8 +14,10 @@ fn main() {
         };
 
         match (cmd, args) {
-            ("exit", "0") => std::process::exit(0),
             ("echo", message) => println!("{}", message),
+            ("exit", "0") => std::process::exit(0),
+            ("type", "echo" | "exit" | "type") => println!("{args} is a shell builtin"),
+            ("type", unknown_cmd) => println!("{unknown_cmd}: not found"),
             _ => println!("{}: command not found", input.trim()),
         }
     }
