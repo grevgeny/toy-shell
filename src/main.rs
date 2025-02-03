@@ -1,4 +1,8 @@
-use std::io::{self, Write};
+use std::{
+    env,
+    io::{self, Write},
+    path::{Path, PathBuf},
+};
 
 fn main() {
     loop {
@@ -72,11 +76,34 @@ fn execute_command(command: Command) {
             println!("{cmd} is a shell builtin");
         }
         Command::Type(cmd) => {
-            println!("{cmd}: not found")
+            if let Some(path) = find_exe(&cmd) {
+                let path_str = path.display();
+                println!("{cmd} is {path_str}");
+            } else {
+                println!("{cmd}: not found");
+            };
         }
         Command::Unknown(cmd) if !cmd.is_empty() => {
             println!("{cmd}: command not found");
         }
         Command::Unknown(_) => {}
     }
+}
+
+fn find_exe<P>(exe_name: P) -> Option<PathBuf>
+where
+    P: AsRef<Path>,
+{
+    env::var_os("PATH").and_then(|paths| {
+        env::split_paths(&paths)
+            .filter_map(|dir| {
+                let full_path = dir.join(&exe_name);
+                if full_path.is_file() {
+                    Some(full_path)
+                } else {
+                    None
+                }
+            })
+            .next()
+    })
 }
