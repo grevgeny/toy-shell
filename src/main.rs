@@ -1,3 +1,4 @@
+use core::str;
 use std::{
     env,
     io::{self, Write},
@@ -28,6 +29,7 @@ enum Command {
     Echo(String),
     Exit(i32),
     Type(String),
+    Exec { programm: String, args: Vec<String> },
     Unknown(String),
 }
 
@@ -50,8 +52,12 @@ fn parse_command(input: &str) -> Command {
             Command::Echo(message)
         }
         "exit" => {
-            if let Ok(code) = tokens.collect::<String>().parse::<i32>() {
-                Command::Exit(code)
+            if let Some(code_str) = tokens.next() {
+                if let Ok(code) = code_str.parse::<i32>() {
+                    Command::Exit(code)
+                } else {
+                    Command::Unknown(input.to_string())
+                }
             } else {
                 Command::Unknown(input.to_string())
             }
@@ -63,31 +69,17 @@ fn parse_command(input: &str) -> Command {
                 Command::Unknown(input.to_string())
             }
         }
-        _ => Command::Unknown(cmd.to_string()),
-    }
-}
+        cmd => {
+            let Some(CommandKind::Executable(_)) = resolve_command(cmd) else {
+                return Command::Unknown(cmd.to_string());
+            };
 
-fn execute_command(command: Command) {
-    match command {
-        Command::Echo(msg) => {
-            println!("{msg}");
+            let args = tokens.map(String::from).collect::<Vec<_>>();
+            Command::Exec {
+                programm: cmd.to_string(),
+                args,
+            }
         }
-        Command::Exit(code) => std::process::exit(code),
-        Command::Type(cmd) => match resolve_command(&cmd) {
-            Some(CommandKind::Builtin) => {
-                println!("{cmd} is a shell builtin");
-            }
-            Some(CommandKind::Executable(path)) => {
-                println!("{cmd} is {}", path.display());
-            }
-            None => {
-                println!("{cmd}: not found");
-            }
-        },
-        Command::Unknown(cmd) if !cmd.is_empty() => {
-            println!("{cmd}: command not found");
-        }
-        Command::Unknown(_) => {}
     }
 }
 
@@ -109,5 +101,32 @@ fn resolve_command(name: &str) -> Option<CommandKind> {
                     .next()
             })
             .map(CommandKind::Executable)
+    }
+}
+
+fn execute_command(command: Command) {
+    match command {
+        Command::Echo(msg) => {
+            println!("{msg}");
+        }
+        Command::Exit(code) => std::process::exit(code),
+        Command::Type(cmd) => match resolve_command(&cmd) {
+            Some(CommandKind::Builtin) => println!("{cmd} is a shell builtin"),
+            Some(CommandKind::Executable(path)) => println!("{cmd} is {}", path.display()),
+            None => println!("{cmd}: not found"),
+        },
+        Command::Exec { programm, args } => {
+            let output = std::process::Command::new(programm)
+                .args(args)
+                .output()
+                .unwrap()
+                .stdout;
+            let output_str = str::from_utf8(&output).unwrap();
+            print!("{output_str}");
+        }
+        Command::Unknown(cmd) if !cmd.is_empty() => {
+            println!("{cmd}: command not found");
+        }
+        Command::Unknown(_) => {}
     }
 }
