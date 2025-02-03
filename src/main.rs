@@ -1,7 +1,7 @@
 use std::{
     env,
     io::{self, Write},
-    path::{Path, PathBuf},
+    path::PathBuf,
 };
 
 fn main() {
@@ -31,8 +31,9 @@ enum Command {
     Unknown(String),
 }
 
-fn is_builtin(cmd: &str) -> bool {
-    matches!(cmd, "echo" | "exit" | "type")
+enum CommandKind {
+    Builtin,
+    Executable(PathBuf),
 }
 
 fn parse_command(input: &str) -> Command {
@@ -72,17 +73,17 @@ fn execute_command(command: Command) {
             println!("{msg}");
         }
         Command::Exit(code) => std::process::exit(code),
-        Command::Type(cmd) if is_builtin(&cmd) => {
-            println!("{cmd} is a shell builtin");
-        }
-        Command::Type(cmd) => {
-            if let Some(path) = find_exe(&cmd) {
-                let path_str = path.display();
-                println!("{cmd} is {path_str}");
-            } else {
+        Command::Type(cmd) => match resolve_command(&cmd) {
+            Some(CommandKind::Builtin) => {
+                println!("{cmd} is a shell builtin");
+            }
+            Some(CommandKind::Executable(path)) => {
+                println!("{cmd} is {}", path.display());
+            }
+            None => {
                 println!("{cmd}: not found");
-            };
-        }
+            }
+        },
         Command::Unknown(cmd) if !cmd.is_empty() => {
             println!("{cmd}: command not found");
         }
@@ -90,20 +91,23 @@ fn execute_command(command: Command) {
     }
 }
 
-fn find_exe<P>(exe_name: P) -> Option<PathBuf>
-where
-    P: AsRef<Path>,
-{
-    env::var_os("PATH").and_then(|paths| {
-        env::split_paths(&paths)
-            .filter_map(|dir| {
-                let full_path = dir.join(&exe_name);
-                if full_path.is_file() {
-                    Some(full_path)
-                } else {
-                    None
-                }
+fn resolve_command(name: &str) -> Option<CommandKind> {
+    if matches!(name, "echo" | "exit" | "type") {
+        Some(CommandKind::Builtin)
+    } else {
+        env::var_os("PATH")
+            .and_then(|paths| {
+                env::split_paths(&paths)
+                    .filter_map(|dir| {
+                        let full_path = dir.join(name);
+                        if full_path.is_file() {
+                            Some(full_path)
+                        } else {
+                            None
+                        }
+                    })
+                    .next()
             })
-            .next()
-    })
+            .map(CommandKind::Executable)
+    }
 }
