@@ -8,8 +8,14 @@ fn main() {
         let mut input = String::new();
         io::stdin().read_line(&mut input).unwrap();
 
-        match input.trim() {
-            "exit 0" => std::process::exit(0),
+        let (cmd, args) = {
+            let input = input.trim();
+            input.split_once(' ').unwrap_or((input, ""))
+        };
+
+        match (cmd, args) {
+            ("exit", "0") => std::process::exit(0),
+            ("echo", message) => println!("{}", message),
             _ => println!("{}: command not found", input.trim()),
         }
     }
