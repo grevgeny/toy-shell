@@ -30,6 +30,7 @@ enum Command {
     Exit(i32),
     Type(String),
     Exec { programm: String, args: Vec<String> },
+    Pwd,
     Unknown(String),
 }
 
@@ -69,6 +70,7 @@ fn parse_command(input: &str) -> Command {
                 Command::Unknown(input.to_string())
             }
         }
+        "pwd" => Command::Pwd,
         cmd => {
             let Some(CommandKind::Executable(_)) = resolve_command(cmd) else {
                 return Command::Unknown(cmd.to_string());
@@ -84,7 +86,7 @@ fn parse_command(input: &str) -> Command {
 }
 
 fn resolve_command(name: &str) -> Option<CommandKind> {
-    if matches!(name, "echo" | "exit" | "type") {
+    if matches!(name, "echo" | "exit" | "type" | "pwd") {
         Some(CommandKind::Builtin)
     } else {
         env::var_os("PATH")
@@ -123,6 +125,10 @@ fn execute_command(command: Command) {
                 .stdout;
             let output_str = str::from_utf8(&output).unwrap();
             print!("{output_str}");
+        }
+        Command::Pwd => {
+            let wd = std::env::current_dir().unwrap();
+            println!("{}", wd.display());
         }
         Command::Unknown(cmd) if !cmd.is_empty() => {
             println!("{cmd}: command not found");
