@@ -40,6 +40,7 @@ enum CommandKind {
     Executable(PathBuf),
 }
 
+#[allow(deprecated)]
 fn parse_command(input: &str) -> Command {
     let mut tokens = input.split_whitespace();
 
@@ -69,7 +70,11 @@ fn parse_command(input: &str) -> Command {
         Some("pwd") => Command::Pwd,
         Some("cd") => {
             if let Some(path) = tokens.next() {
-                Command::Cd(path.into())
+                if path == "~" {
+                    Command::Cd(std::env::home_dir().unwrap())
+                } else {
+                    Command::Cd(path.into())
+                }
             } else {
                 Command::Unknown(input.to_string())
             }
