@@ -5,15 +5,15 @@ use std::{
     path::PathBuf,
 };
 
-fn main() {
+fn main() -> anyhow::Result<()> {
     loop {
         print!("$ ");
-        io::stdout().flush().unwrap();
+        io::stdout().flush()?;
 
         let mut input = String::new();
-        io::stdin().read_line(&mut input).unwrap();
+        io::stdin().read_line(&mut input)?;
 
-        let command = {
+        let cmd = {
             let trimmed_input = input.trim();
             if trimmed_input.is_empty() {
                 continue;
@@ -21,7 +21,7 @@ fn main() {
             parse_command(trimmed_input)
         };
 
-        execute_command(command);
+        execute_command(cmd)?;
     }
 }
 
@@ -42,17 +42,12 @@ enum CommandKind {
 fn parse_command(input: &str) -> Command {
     let mut tokens = input.split_whitespace();
 
-    let cmd = match tokens.next() {
-        Some(token) => token,
-        None => return Command::Unknown(String::new()),
-    };
-
-    match cmd {
-        "echo" => {
+    match tokens.next() {
+        Some("echo") => {
             let message = tokens.collect::<Vec<_>>().join(" ");
             Command::Echo(message)
         }
-        "exit" => {
+        Some("exit") => {
             if let Some(code_str) = tokens.next() {
                 if let Ok(code) = code_str.parse::<i32>() {
                     Command::Exit(code)
@@ -63,25 +58,26 @@ fn parse_command(input: &str) -> Command {
                 Command::Unknown(input.to_string())
             }
         }
-        "type" => {
+        Some("type") => {
             if let Some(cmd) = tokens.next() {
                 Command::Type(cmd.to_string())
             } else {
                 Command::Unknown(input.to_string())
             }
         }
-        "pwd" => Command::Pwd,
-        cmd => {
-            let Some(CommandKind::Executable(_)) = resolve_command(cmd) else {
-                return Command::Unknown(cmd.to_string());
-            };
-
-            let args = tokens.map(String::from).collect::<Vec<_>>();
-            Command::Exec {
-                programm: cmd.to_string(),
-                args,
+        Some("pwd") => Command::Pwd,
+        Some(cmd) => {
+            if let Some(CommandKind::Executable(_)) = resolve_command(cmd) {
+                let args = tokens.map(String::from).collect::<Vec<_>>();
+                Command::Exec {
+                    programm: cmd.to_string(),
+                    args,
+                }
+            } else {
+                Command::Unknown(cmd.to_string())
             }
         }
+        None => Command::Unknown(String::new()),
     }
 }
 
@@ -91,22 +87,20 @@ fn resolve_command(name: &str) -> Option<CommandKind> {
     } else {
         env::var_os("PATH")
             .and_then(|paths| {
-                env::split_paths(&paths)
-                    .filter_map(|dir| {
-                        let full_path = dir.join(name);
-                        if full_path.is_file() {
-                            Some(full_path)
-                        } else {
-                            None
-                        }
-                    })
-                    .next()
+                env::split_paths(&paths).find_map(|dir| {
+                    let full_path = dir.join(name);
+                    if full_path.is_file() {
+                        Some(full_path)
+                    } else {
+                        None
+                    }
+                })
             })
             .map(CommandKind::Executable)
     }
 }
 
-fn execute_command(command: Command) {
+fn execute_command(command: Command) -> Result<(), anyhow::Error> {
     match command {
         Command::Echo(msg) => {
             println!("{msg}");
@@ -120,14 +114,13 @@ fn execute_command(command: Command) {
         Command::Exec { programm, args } => {
             let output = std::process::Command::new(programm)
                 .args(args)
-                .output()
-                .unwrap()
+                .output()?
                 .stdout;
-            let output_str = str::from_utf8(&output).unwrap();
+            let output_str = str::from_utf8(&output)?;
             print!("{output_str}");
         }
         Command::Pwd => {
-            let wd = std::env::current_dir().unwrap();
+            let wd = std::env::current_dir()?;
             println!("{}", wd.display());
         }
         Command::Unknown(cmd) if !cmd.is_empty() => {
@@ -135,4 +128,6 @@ fn execute_command(command: Command) {
         }
         Command::Unknown(_) => {}
     }
+
+    Ok(())
 }
