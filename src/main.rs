@@ -31,6 +31,7 @@ enum Command {
     Type(String),
     Exec { programm: String, args: Vec<String> },
     Pwd,
+    Cd(PathBuf),
     Unknown(String),
 }
 
@@ -66,6 +67,13 @@ fn parse_command(input: &str) -> Command {
             }
         }
         Some("pwd") => Command::Pwd,
+        Some("cd") => {
+            if let Some(path) = tokens.next() {
+                Command::Cd(path.into())
+            } else {
+                Command::Unknown(input.to_string())
+            }
+        }
         Some(cmd) => {
             if let Some(CommandKind::Executable(_)) = resolve_command(cmd) {
                 let args = tokens.map(String::from).collect::<Vec<_>>();
@@ -82,7 +90,7 @@ fn parse_command(input: &str) -> Command {
 }
 
 fn resolve_command(name: &str) -> Option<CommandKind> {
-    if matches!(name, "echo" | "exit" | "type" | "pwd") {
+    if matches!(name, "echo" | "exit" | "type" | "pwd" | "cd") {
         Some(CommandKind::Builtin)
     } else {
         env::var_os("PATH")
@@ -123,6 +131,14 @@ fn execute_command(command: Command) -> Result<(), anyhow::Error> {
             let wd = std::env::current_dir()?;
             println!("{}", wd.display());
         }
+
+        Command::Cd(path) if path.exists() && path.is_absolute() => {
+            std::env::set_current_dir(path)?
+        }
+        Command::Cd(path) => {
+            println!("cd: {}: No such file or directory", path.display());
+        }
+
         Command::Unknown(cmd) if !cmd.is_empty() => {
             println!("{cmd}: command not found");
         }
