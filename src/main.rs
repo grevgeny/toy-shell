@@ -132,9 +132,7 @@ fn execute_command(command: Command) -> Result<(), anyhow::Error> {
             println!("{}", wd.display());
         }
 
-        Command::Cd(path) if path.exists() && path.is_absolute() => {
-            std::env::set_current_dir(path)?
-        }
+        Command::Cd(path) if path.exists() && path.is_dir() => std::env::set_current_dir(path)?,
         Command::Cd(path) => {
             println!("cd: {}: No such file or directory", path.display());
         }
