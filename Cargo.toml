@@ -1,5 +1,5 @@
 [package]
-name = "codecrafters-shell"
+name = "toy-shell"
 version = "0.1.0"
 authors = ["Codecrafters <hello@codecrafters.io>"]
 edition = "2021"
@@ -8,4 +8,4 @@ rust-version = "1.82"
 [dependencies]
 anyhow = "1.0.95"    # error handling
 bytes = "1.10.0"     # helps manage buffers
-thiserror = "1.0.69" # error handling
+thiserror = "2.0.11" # error handling
