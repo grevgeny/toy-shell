@@ -1,37 +1,38 @@
 use std::path::PathBuf;
 use std::str;
 
+use crate::tokenizer::Tokenizer;
+
 use super::{Command, CommandType};
 
-#[derive(Default)]
-pub struct Executable {
-    name: String,
+pub struct Executable<'a> {
+    name: &'a str,
     path: PathBuf,
-    args: Vec<String>,
+    args: Vec<&'a str>,
 }
 
-impl Executable {
-    pub fn new(name: String, path: PathBuf) -> Self {
+impl<'a> Executable<'a> {
+    pub fn new(name: &'a str, path: PathBuf) -> Self {
         Self {
             name,
             path,
-            ..Default::default()
+            args: Vec::new(),
         }
     }
 }
 
-impl Command for Executable {
+impl<'a> Command<'a> for Executable<'a> {
     fn command_type(&self) -> CommandType {
-        CommandType::Executable(self.path.clone())
+        CommandType::Executable(&self.path)
     }
 
-    fn parse_args(&mut self, tokens: Vec<String>) -> Result<(), anyhow::Error> {
-        self.args = tokens;
+    fn parse_args(&mut self, tokens: Tokenizer<'a>) -> Result<(), anyhow::Error> {
+        self.args = tokens.collect::<Vec<_>>();
         Ok(())
     }
 
     fn execute(&self) -> Result<(), anyhow::Error> {
-        let output = std::process::Command::new(&self.name)
+        let output = std::process::Command::new(self.name)
             .args(&self.args)
             .output()?
             .stdout;

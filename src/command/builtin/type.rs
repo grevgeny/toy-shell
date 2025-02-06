@@ -1,20 +1,23 @@
-use crate::command::{find_command, Command, CommandType};
+use crate::{
+    command::{find_command, Command, CommandType},
+    tokenizer::Tokenizer,
+};
 
 #[derive(Default, Debug)]
-pub struct Type {
-    cmd_name: String,
+pub struct Type<'a> {
+    cmd_name: &'a str,
 }
 
-impl Command for Type {
+impl<'a> Command<'a> for Type<'a> {
     fn command_type(&self) -> CommandType {
         CommandType::Builtin
     }
 
-    fn parse_args(&mut self, tokens: Vec<String>) -> Result<(), anyhow::Error> {
-        let Some(command_name) = tokens.first() else {
+    fn parse_args(&mut self, mut tokens: Tokenizer<'a>) -> Result<(), anyhow::Error> {
+        let Some(cmd_name) = tokens.next() else {
             return Ok(());
         };
-        self.cmd_name.clone_from(command_name);
+        self.cmd_name = cmd_name;
         Ok(())
     }
 
@@ -24,7 +27,7 @@ impl Command for Type {
             return Ok(());
         }
 
-        match find_command(&self.cmd_name) {
+        match find_command(self.cmd_name) {
             Some(cmd) => match cmd.command_type() {
                 CommandType::Builtin => {
                     println!("{} is a shell builtin", self.cmd_name);

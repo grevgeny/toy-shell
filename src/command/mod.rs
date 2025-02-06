@@ -7,7 +7,7 @@ use std::{env, path::PathBuf};
 
 pub use self::command::{Command, CommandType};
 
-pub fn find_command(name: &str) -> Option<Box<dyn Command>> {
+pub fn find_command(name: &str) -> Option<Box<dyn Command + '_>> {
     match name {
         "echo" => Some(Box::new(builtin::Echo::default())),
         "type" => Some(Box::new(builtin::Type::default())),
@@ -15,10 +15,7 @@ pub fn find_command(name: &str) -> Option<Box<dyn Command>> {
         "pwd" => Some(Box::new(builtin::Pwd)),
         "cd" => Some(Box::new(builtin::Cd::default())),
         _ => match find_executable(name) {
-            Some(path) => Some(Box::new(executable::Executable::new(
-                name.to_string(),
-                path,
-            ))),
+            Some(path) => Some(Box::new(executable::Executable::new(name, path))),
             None => None,
         },
     }

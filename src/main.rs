@@ -1,6 +1,6 @@
 use std::io::{self, Write};
 
-use toy_shell::command::find_command;
+use toy_shell::{command::find_command, tokenizer::Tokenizable};
 
 fn main() -> anyhow::Result<()> {
     loop {
@@ -15,13 +15,13 @@ fn main() -> anyhow::Result<()> {
             continue;
         }
 
-        let mut tokens = input.split_whitespace();
+        let mut tokens = input.tokens();
         let Some(command_name) = tokens.next() else {
             continue;
         };
 
         let command = if let Some(mut command) = find_command(command_name) {
-            command.parse_args(tokens.map(String::from).collect())?;
+            command.parse_args(tokens)?;
             command
         } else {
             println!("{command_name}: command not found");

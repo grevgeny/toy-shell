@@ -1,17 +1,20 @@
-use crate::command::{Command, CommandType};
+use crate::{
+    command::{Command, CommandType},
+    tokenizer::Tokenizer,
+};
 
 #[derive(Default, Debug)]
 pub struct Exit {
     code: i32,
 }
 
-impl Command for Exit {
+impl Command<'_> for Exit {
     fn command_type(&self) -> CommandType {
         CommandType::Builtin
     }
 
-    fn parse_args(&mut self, tokens: Vec<String>) -> Result<(), anyhow::Error> {
-        let Some(code_str) = tokens.first() else {
+    fn parse_args(&mut self, mut tokens: Tokenizer) -> Result<(), anyhow::Error> {
+        let Some(code_str) = tokens.next() else {
             return Ok(());
         };
         self.code = code_str.parse().unwrap_or(0);

@@ -1,15 +1,17 @@
-use std::path::PathBuf;
+use std::path::Path;
 
 use anyhow;
 
-pub trait Command {
+use crate::tokenizer::Tokenizer;
+
+pub trait Command<'a> {
     fn command_type(&self) -> CommandType;
-    fn parse_args(&mut self, tokens: Vec<String>) -> Result<(), anyhow::Error>;
+    fn parse_args(&mut self, tokens: Tokenizer<'a>) -> Result<(), anyhow::Error>;
     fn execute(&self) -> Result<(), anyhow::Error>;
 }
 
 #[derive(Debug)]
-pub enum CommandType {
+pub enum CommandType<'a> {
     Builtin,
-    Executable(PathBuf),
+    Executable(&'a Path),
 }

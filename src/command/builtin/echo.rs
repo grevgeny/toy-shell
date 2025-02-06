@@ -1,17 +1,20 @@
-use crate::command::{command::CommandType, Command};
+use crate::{
+    command::{command::CommandType, Command},
+    tokenizer::Tokenizer,
+};
 
 #[derive(Default)]
 pub struct Echo {
     message: String,
 }
 
-impl Command for Echo {
+impl Command<'_> for Echo {
     fn command_type(&self) -> CommandType {
         CommandType::Builtin
     }
 
-    fn parse_args(&mut self, tokens: Vec<String>) -> Result<(), anyhow::Error> {
-        self.message = tokens.join(" ");
+    fn parse_args(&mut self, tokens: Tokenizer) -> Result<(), anyhow::Error> {
+        self.message = tokens.collect::<Vec<_>>().join(" ");
         Ok(())
     }
 

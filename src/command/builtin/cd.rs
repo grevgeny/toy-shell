@@ -1,22 +1,25 @@
 use std::path::PathBuf;
 
-use crate::command::{Command, CommandType};
+use crate::{
+    command::{Command, CommandType},
+    tokenizer::Tokenizer,
+};
 
 #[derive(Default)]
 pub struct Cd {
     path: PathBuf,
 }
 
-impl Command for Cd {
+impl Command<'_> for Cd {
     fn command_type(&self) -> CommandType {
         CommandType::Builtin
     }
 
     #[allow(deprecated)]
-    fn parse_args(&mut self, tokens: Vec<String>) -> Result<(), anyhow::Error> {
+    fn parse_args(&mut self, mut tokens: Tokenizer) -> Result<(), anyhow::Error> {
         let home_dir = std::env::home_dir().unwrap();
 
-        let path = if let Some(path) = tokens.first() {
+        let path = if let Some(path) = tokens.next() {
             if path.eq("~") {
                 home_dir
             } else {
