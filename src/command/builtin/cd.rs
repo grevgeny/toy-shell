@@ -5,7 +5,7 @@ use crate::{
     tokenizer::Tokenizer,
 };
 
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct Cd {
     path: PathBuf,
 }

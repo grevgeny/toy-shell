@@ -3,7 +3,7 @@ use crate::{
     tokenizer::Tokenizer,
 };
 
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct Echo {
     message: String,
 }
