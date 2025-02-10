@@ -5,10 +5,11 @@ use crate::tokenizer::Tokenizer;
 
 use super::{Command, CommandType};
 
+#[derive(Debug)]
 pub struct Executable<'a> {
     name: &'a str,
     path: PathBuf,
-    args: Vec<&'a str>,
+    args: Vec<String>,
 }
 
 impl<'a> Executable<'a> {

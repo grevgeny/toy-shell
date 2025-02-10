@@ -20,7 +20,7 @@ fn main() -> anyhow::Result<()> {
             continue;
         };
 
-        let command = if let Some(mut command) = find_command(command_name) {
+        let command = if let Some(mut command) = find_command(&command_name) {
             command.parse_args(tokens)?;
             command
         } else {

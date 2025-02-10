@@ -4,11 +4,11 @@ use crate::{
 };
 
 #[derive(Default, Debug)]
-pub struct Type<'a> {
-    cmd_name: &'a str,
+pub struct Type {
+    cmd_name: String,
 }
 
-impl<'a> Command<'a> for Type<'a> {
+impl<'a> Command<'a> for Type {
     fn command_type(&self) -> CommandType {
         CommandType::Builtin
     }
@@ -27,7 +27,7 @@ impl<'a> Command<'a> for Type<'a> {
             return Ok(());
         }
 
-        match find_command(self.cmd_name) {
+        match find_command(&self.cmd_name) {
             Some(cmd) => match cmd.command_type() {
                 CommandType::Builtin => {
                     println!("{} is a shell builtin", self.cmd_name);
