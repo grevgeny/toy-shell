@@ -24,8 +24,8 @@ impl<'a> Tokenizer<'a> {
 
         while let Some(char) = self.iter.next() {
             match char {
-                '\'' => {
-                    let quoted_iter = self.iter.by_ref().take_while(|&char| char != '\'');
+                quote @ ('\'' | '"') => {
+                    let quoted_iter = self.iter.by_ref().take_while(|&char| char != quote);
                     token.extend(quoted_iter);
                 }
                 char if char.is_whitespace() => break,
