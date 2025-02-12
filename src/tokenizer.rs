@@ -28,6 +28,10 @@ impl<'a> Tokenizer<'a> {
                     let quoted_iter = self.iter.by_ref().take_while(|&char| char != quote);
                     token.extend(quoted_iter);
                 }
+                '\\' => {
+                    let preserved_char = self.iter.next()?;
+                    token.push(preserved_char);
+                }
                 char if char.is_whitespace() => break,
                 char => token.push(char),
             }
