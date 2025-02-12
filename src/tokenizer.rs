@@ -24,8 +24,28 @@ impl<'a> Tokenizer<'a> {
 
         while let Some(char) = self.iter.next() {
             match char {
-                quote @ ('\'' | '"') => {
-                    let quoted_iter = self.iter.by_ref().take_while(|&char| char != quote);
+                double_quote @ '"' => {
+                    let mut quoted_data: Vec<char> = Vec::new();
+
+                    while let Some(char) = self.iter.next() {
+                        if char == double_quote {
+                            break;
+                        }
+
+                        if char == '\\' {
+                            if let Some('\\' | '$' | '"') = self.iter.peek() {
+                                quoted_data.push(self.iter.next().unwrap());
+                                continue;
+                            }
+                        }
+
+                        quoted_data.push(char);
+                    }
+
+                    token.extend(quoted_data);
+                }
+                single_quote @ '\'' => {
+                    let quoted_iter = self.iter.by_ref().take_while(|&char| char != single_quote);
                     token.extend(quoted_iter);
                 }
                 '\\' => {
